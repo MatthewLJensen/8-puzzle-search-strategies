@@ -6,6 +6,7 @@ I also compared these strategies using the rank function defined in 8PuzzleSearc
 I tracked 3 values for each function and then averaged these values over 100 different random board positions. The random board positions were created by randomly moving an 8-puzzle instance 1000 times. I tracked the average number of visited nodes, the average number of steps in the solution, and the average time it took for the function to find the solution, in that order. Here are the results:
 
 | Search Strategy                                         | Avg # of Visited Nodes  | Avg # Solution Steps  | Avg Secs to Solution |
+| ------------------------------------------------------- | ----------------------- | --------------------- | -------------------- |
 | Breadth First Search                                    | 113927                  | 23.28                 | 1.002                |
 | Greedy Best with 'Number of Tiles Displaced' Heuristic  | 1229                    | 91.18                 | 0.0095               |
 | Greedy Best with 'Manhattan Distance' Heuristic         | 430.67                  | 62.46                 | 0.0044               |
