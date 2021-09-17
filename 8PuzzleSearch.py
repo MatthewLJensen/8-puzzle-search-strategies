@@ -5,11 +5,11 @@ from queue import PriorityQueue
 
 #GLOBAL VARIABLES
 
-goal = "12345678-"
-randomize_iterations = 100
-test_iterations = 10
+goal = "12345678-"              # The goal state
+randomize_iterations = 1000     # How many iterations the randomize function should perform on the goal state
+test_iterations = 100           # How many iterations the rank function should perform when comparing search strategies
 
-class Node:
+class Node: # The only class in this program. Holds information on a node, or instance, of an 8-puzzle state.
     def __init__(self, instance, parent, h, g):
         self.instance = instance
         self.parent = parent
@@ -17,15 +17,22 @@ class Node:
         self.g = g
 
     def __gt__(self, other):
+        if (self.h + self.g) == (other.h + other.g):
+            return self.g > other.g # If they tie, prioritize the g score, rather than assuming they are equal
         return (self.h + self.g) > (other.h + other.g)
+
     def __lt__(self, other):
+        if (self.h + self.g) == (other.h + other.g):
+            return self.g < other.g # If they tie, prioritize the g score, rather than assuming they are equal
         return (self.h + self.g) < (other.h + other.g)
+
     def __eq__(self, other):
-        return (self.h + self.g) == (other.h + other.g)
+        return (self.h == other.h) and (self.g == other.g) # They are only equal if both Gs are equal and both Hs
+
     def __repr__(self):
         return repr("Instance: " + str(self.instance) + ", G: " + str(self.g) + ", H: " + str(self.h))
 
-    def find_neighbors(self):
+    def find_neighbors(self): # Finds the neighbors of an instance. This function could be cleaned up to use the find_row() and find_column helper functions. Currently a little messy.
         neighbors = []
         position = self.instance.index('-')
 
@@ -47,16 +54,16 @@ class Node:
 
         return neighbors
 
-    def print_path(self):
+    def print_path(self): # Prints the path from a node back to it's initial parent. If you use this on the output of one of the search strategies, it will print the solution path.
         current = self
         path = []
         while (current):
-            path.insert(0,current.parent)
+            path.insert(0,current)
             current = current.parent
         for node in path:
             print(repr(node))
 
-    def path_length(self):
+    def path_length(self): # Prints the number of steps back to the original parent node. If you use this on the output of one of the search strategies, it will print the solution length.
         current = self
         length = 0
         while (current):
@@ -66,9 +73,7 @@ class Node:
 
 #HELPER FUNCTIONS
 
-
-
-def find_row(instance, tile): # returns the row number of a tile
+def find_row(instance, tile): # returns the row number of a tile within a specific instance. Doesn't currently take a node object, but rather a node.instance
     position = instance.index(tile)
     if position < 3:
         return 0
@@ -77,12 +82,9 @@ def find_row(instance, tile): # returns the row number of a tile
     else:
         return 2
 
-def find_column(instance, tile): # returns the column number of a tile
+def find_column(instance, tile): # returns the column number of a tile within a specific instance. Doesn't currently take a node object, but rather a node.instance
     position = instance.index(tile)
     return (position%3)
-
-def sort_val(e):
-    return e[-1][0]
 
 def randomize(): # creates a random 8-puzzle configuration by moving tiles randomly 100 times.
     iterations = randomize_iterations
@@ -101,24 +103,19 @@ def manhattan_distance(instance): # returns the combined distance that each tile
             distance += (abs(find_column(instance, tile) - find_column(goal, tile)) + abs(find_row(instance, tile) - find_row(goal, tile)))
     return distance
 
-
-
-
-def num_displaced(instance): # returns the number of tiles that are not in the correct goal-state location
+def num_displaced(instance):      # returns the number of tiles that are not in the correct goal-state location
     displaced_tiles = 0
     for tile in range (1,9):
         if (instance.index(str(tile)) != goal.index(str(tile))):
             displaced_tiles += 1
     return displaced_tiles
 
-
-
 #SEARCH FUNCTIONS
 
 def breadth_first_search(initial_instance):
-    visited = []
+    visited = set()
     queue = []
-    visited.append(initial_instance.instance)
+    visited.add(initial_instance.instance)
     queue.append(initial_instance)
 
     while queue:
@@ -127,18 +124,17 @@ def breadth_first_search(initial_instance):
             return (node, len(visited))
         for neighbor in node.find_neighbors():
             if neighbor not in visited:
-                new_node = Node(neighbor, node, 0, 0)
-                visited.append(neighbor)
+                new_node = Node(neighbor, node, manhattan_distance(neighbor), node.g + 1) #while this does input heuristic values, breadth first search does not utilize them
+                visited.add(neighbor)
                 queue.append(new_node)
     return -1
 
 
-
 def best_first_search(initial_instance, heuristic):
-    visited = []
+    visited = set()
     queue = PriorityQueue()
     initial_instance.h = heuristic(initial_instance.instance)
-    visited.append(initial_instance.instance)
+    visited.add(initial_instance.instance)
     queue.put(initial_instance)
     while queue:
         node = queue.get()
@@ -147,16 +143,16 @@ def best_first_search(initial_instance, heuristic):
         for neighbor in node.find_neighbors():
             if neighbor not in visited:
                 new_node = Node(neighbor, node, heuristic(neighbor), 0)
-                visited.append(neighbor)
+                visited.add(neighbor)
                 queue.put(new_node)
     return -1
 
 
 def a_star_search(initial_instance, heuristic):
-    visited = []
+    visited = set()
     queue = PriorityQueue()
     initial_instance.h = heuristic(initial_instance.instance)
-    visited.append(initial_instance.instance)
+    visited.add(initial_instance.instance)
     queue.put(initial_instance)
     while queue:
         node = queue.get()
@@ -165,11 +161,9 @@ def a_star_search(initial_instance, heuristic):
         for neighbor in node.find_neighbors():
             if neighbor not in visited:
                 new_node = Node(neighbor, node, heuristic(neighbor), node.g + 1)
-                visited.append(neighbor)
+                visited.add(neighbor)
                 queue.put(new_node)
     return -1
-
-
 
 # RANK FUNCTIONS
 def rank():
@@ -184,7 +178,7 @@ def rank():
     print("Comparing search algorithms. Beginning: \n")
     while tests_completed < test_iterations:
         test_board = randomize()
-        print("Running test " + str(tests_completed + 1) + " of " + str(test_iterations) + ". Random puzzle state: " + test_board)
+        print("Running test " + str(tests_completed + 1) + " of " + str(test_iterations) + ". Random puzzle state: " + str(test_board))
 
         print("Starting Breadth First Search")
         start = time.time()
@@ -192,7 +186,7 @@ def rank():
         end = time.time()
 
         breadth_first_results[0] += results[1]
-        breadth_first_results[1] += len(results[0])
+        breadth_first_results[1] += results[0].path_length()
         breadth_first_results[2] += (end - start)
 
         print("Starting Greedy Best First Search with \'Number of Tiles Out of Place\' heuristic")
@@ -201,7 +195,7 @@ def rank():
         end = time.time()
 
         greedy_best_first_num_displaced_results[0] += results[1]
-        greedy_best_first_num_displaced_results[1] += len(results[0])
+        greedy_best_first_num_displaced_results[1] += results[0].path_length()
         greedy_best_first_num_displaced_results[2] += (end - start)
 
         print("Starting Greedy Best First Search with \'Manhattan Distance\' heuristic")
@@ -210,7 +204,7 @@ def rank():
         end = time.time()
 
         greedy_best_first_manhattan_distance_results[0] += results[1]
-        greedy_best_first_manhattan_distance_results[1] += len(results[0])
+        greedy_best_first_manhattan_distance_results[1] += results[0].path_length()
         greedy_best_first_manhattan_distance_results[2] += (end - start)
 
         print("Starting A-Star Search with \'Number of Tiles Out of Place\' heuristic")
@@ -219,7 +213,7 @@ def rank():
         end = time.time()
 
         a_star_num_displaced_results[0] += results[1]
-        a_star_num_displaced_results[1] += len(results[0])
+        a_star_num_displaced_results[1] += results[0].path_length()
         a_star_num_displaced_results[2] += (end - start)
 
         print("Starting A-Star Search with \'Manhattan Distance\' heuristic")
@@ -228,7 +222,7 @@ def rank():
         end = time.time()
 
         a_star_manhattan_distance_results[0] += results[1]
-        a_star_manhattan_distance_results[1] += len(results[0])
+        a_star_manhattan_distance_results[1] += results[0].path_length()
         a_star_manhattan_distance_results[2] += (end - start)
 
 
@@ -256,32 +250,50 @@ def rank():
     print("\nA Star with \'Manhattan Distance\' heuristic")
     print(a_star_manhattan_distance_results)
 
+def compare():
+    instance = randomize()
+    print("________________________________________________________________")
+    print(instance)
+    print()
 
-# RANK SEARCH ALGOS
+    astar = a_star_search(instance, manhattan_distance)
+    print("         Num Visited   Solution Length     ")
+    print("A*         " + str(astar[1])   + " " * (18 - len(str(astar[1]))) + str(astar[0].path_length()))
+
+    astar = a_star_search(instance, num_displaced)
+    print()
+    print("a* ndh     " + str(astar[1])   + " " * (18 - len(str(astar[1]))) + str(astar[0].path_length()))
+
+    gbfs  = best_first_search(instance, manhattan_distance)
+    print()
+    print("gbfs       " + str(gbfs[1])    + " " * (18 - len(str(gbfs[1]))) + str(gbfs[0].path_length()))
+
+    gbfs  = best_first_search(instance, manhattan_distance)
+    print()
+    print("gbfs ndh   " + str(gbfs[1])    + " " * (18 - len(str(gbfs[1]))) + str(gbfs[0].path_length()))
+
+    breadth = breadth_first_search(instance)
+    print()
+    print("Breadth    " + str(breadth[1]) + " " * (18 - len(str(breadth[1])))   + str(breadth[0].path_length()))
+
+# TEST HERE
+
 #rank()
+compare()
 
+# OTHER TESTS
 
-# TEST HEURISTICS
-# print(manhattan_distance("12345678-"))
-# print(manhattan_distance("1234567-8"))
-# print(manhattan_distance("21345678-"))
-# print(num_displaced("7145-6832"))
-
-# GENERATE RANDOM BOARD
-#print(randomize())
-
-
-#instance = Node("1638-7245", None, 0, 0)
-instance = randomize()
-
-astar = a_star_search(instance, manhattan_distance)
-print("        Num Visited   Solution Length     ")
-print("A*        " + str(astar[1])   + "               " + str(astar[0].path_length()))
-
-gbfs  = best_first_search(instance, manhattan_distance)
-print()
-print("GBFS      " + str(gbfs[1])    + "               " + str(gbfs[0].path_length()))
-
-breadth = breadth_first_search(instance)
-print()
-print("Breadth   " + str(breadth[1]) + "             "   + str(breadth[0].path_length()))
+# Searchs for a sitation where A* produces a result with a longer path length than breadth first search. This shouldn't happen, but I used this to find situations where it was an fix them.
+# keep_going = True
+# alength = 0
+# blength = 0
+# lowest = ("12345678-", 25)
+# while keep_going:
+#     instance = randomize()
+#     breadth = breadth_first_search(instance)
+#     astar = a_star_search(instance, manhattan_distance)
+#     if (breadth[0].path_length() != astar[0].path_length()):
+#         print(instance)
+#         if (astar[0].path_length() < lowest[1]):
+#             lowest = (instance, astar[0].path_length())
+#             print(lowest)
