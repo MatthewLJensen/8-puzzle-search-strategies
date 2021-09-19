@@ -54,14 +54,18 @@ class Node: # The only class in this program. Holds information on a node, or in
 
         return neighbors
 
-    def print_path(self): # Prints the path from a node back to it's initial parent. If you use this on the output of one of the search strategies, it will print the solution path.
+    def print_path(self, pretty: bool = False): # Prints the path from a node back to it's initial parent. If you use this on the output of one of the search strategies, it will print the solution path.
         current = self
         path = []
         while (current):
             path.insert(0,current)
             current = current.parent
         for node in path:
-            print(repr(node))
+            if pretty:
+                node.print_pretty()
+                print()
+            else:
+                print(repr(node))
 
     def path_length(self): # Prints the number of steps back to the original parent node. If you use this on the output of one of the search strategies, it will print the solution length.
         current = self
@@ -70,6 +74,15 @@ class Node: # The only class in this program. Holds information on a node, or in
             length += 1
             current = current.parent
         return length
+
+    def print_pretty(self):
+        index = 0
+        for char in self.instance:
+            print(char, end=" ")
+            index += 1
+            if (index%3) == 0:
+                print()
+
 
 #HELPER FUNCTIONS
 
@@ -276,13 +289,20 @@ def compare():
     print()
     print("Breadth    " + str(breadth[1]) + " " * (18 - len(str(breadth[1])))   + str(breadth[0].path_length()))
 
-# TEST HERE
 
+
+# Compare the strategies with these functions
 #rank()
-compare()
+#compare()
+
+
+test = randomize()
+a_star_search(test, manhattan_distance)[0].print_path()
+
+
+
 
 # OTHER TESTS
-
 # Searchs for a sitation where A* produces a result with a longer path length than breadth first search. This shouldn't happen, but I used this to find situations where it was an fix them.
 # keep_going = True
 # alength = 0
