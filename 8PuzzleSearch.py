@@ -130,7 +130,6 @@ def breadth_first_search(initial_instance):
     queue = []
     visited.add(initial_instance.instance)
     queue.append(initial_instance)
-
     while queue:
         node = queue.pop(0)
         if node.instance == goal:
@@ -297,8 +296,8 @@ def compare():
 
 
 test = randomize()
-a_star_search(test, manhattan_distance)[0].print_path()
-
+a_star_search(test, manhattan_distance)[0].print_path(True)
+#compare()
 
 
 
